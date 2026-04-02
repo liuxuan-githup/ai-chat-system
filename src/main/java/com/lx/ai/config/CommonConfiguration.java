@@ -49,6 +49,7 @@ public class CommonConfiguration {
         return SimpleVectorStore.builder(embeddingModel).build();
     }
 
+    // 使用spring ai 的ChatMemory+Advisors实现多轮对话记忆
     @Bean
     public ChatClient chatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory,ToolCallbackProvider mcpTools) {
         return ChatClient
