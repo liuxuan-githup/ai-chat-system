@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Component
 public class FeedbackTools {
 
+    // 使用@tool注解实现查询数据
     private final IcustomerServiceFeedbackService service;
 
     @Tool(description = "新增反馈，返回反馈单号")

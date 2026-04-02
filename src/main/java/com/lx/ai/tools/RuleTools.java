@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class RuleTools {
 
+    // 使用@tool注解实现查询数据
     private final IsysCalculationRuleService calculationRuleService;
 
     @Tool(description = "根据条件查询计算方式")
