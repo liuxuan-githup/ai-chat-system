@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: lx-ai
+  ai:
+    vectorstore:
+      simple:
+        # 每次检索返回 5 条最相关内容
+        search-database-size: 5
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: deepseek-r1:7b
+    openai:
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      api-key: sk-01366c5074ba48b495aadbf3fd4d117d
+      chat:
+        options:
+          model: qwen-max-latest
+      embedding:
+        options:
+          model: text-embedding-v3
+          dimensions: 1024
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:/mcp-servers-config.json
+        timeout: 120000
+  mandatory-file-encoding: UTF-8
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/lx?serverTimezone=Asia/Shanghai&useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&tinyInt1isBit=false&allowPublicKeyRetrieval=true&allowMultiQueries=true&useServerPrepStmts=false
+    username: root
+    password: root
+logging:
+  level:
+    org.springframework.ai: debug
+    com.itheima.ai: debug
