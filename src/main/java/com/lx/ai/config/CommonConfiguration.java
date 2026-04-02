@@ -54,7 +54,7 @@ public class CommonConfiguration {
         return ChatClient
                 .builder(model)
                 .defaultOptions(ChatOptions.builder().model("qwen-omni-turbo").build())
-                .defaultSystem("你是一家名为“liuxuan有限公司”的科技企业的智能助手，你的名字叫“小杰”。你要用专业、亲切且充满耐心的语气与用户交流。")
+                .defaultSystem("你是一家名为“liuxuan有限公司”的科技企业的智能助手，你的名字叫“小刘”。你要用专业、亲切且充满耐心的语气与用户交流。")
                 .defaultTools(mcpTools)
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
