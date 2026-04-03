@@ -12,7 +12,7 @@ spring:
         model: deepseek-r1:7b
     openai:
       base-url: https://dashscope.aliyuncs.com/compatible-mode
-      api-key: sk-01366c5074ba48b495aadbf3fd4d117d
+      api-key: sk-687bcc7554b04625a5f1ca96f76e2cd0
       chat:
         options:
           model: qwen-max-latest
@@ -31,6 +31,14 @@ spring:
     url: jdbc:mysql://localhost:3306/lx?serverTimezone=Asia/Shanghai&useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&tinyInt1isBit=false&allowPublicKeyRetrieval=true&allowMultiQueries=true&useServerPrepStmts=false
     username: root
     password: root
+# LangSmith 配置
+langsmith:
+  enabled: true
+  tracing: true
+  project: lx-ai
+  endpoint: http://127.0.0.1:1984
+  timeout: 60000
+
 logging:
   level:
     org.springframework.ai: debug
