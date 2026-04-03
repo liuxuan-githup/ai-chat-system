@@ -5,6 +5,7 @@ import com.lx.ai.service.IsysCalculationRuleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 
@@ -15,6 +16,7 @@ public class RuleTools {
     // 使用@tool注解实现查询数据
     private final IsysCalculationRuleService calculationRuleService;
 
+    @Cacheable(value = "railwayKnowledge", key = "#question")
     @Tool(description = "根据条件查询计算方式")
     public sysCalculationRule getCalculationRule(@ToolParam(description = "查询的条件") String name) {
         if (name == null || name.isBlank()) {
