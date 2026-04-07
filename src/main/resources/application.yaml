@@ -19,7 +19,7 @@ spring:
         model: deepseek-r1:7b
     openai:
       base-url: https://dashscope.aliyuncs.com/compatible-mode
-      api-key: sk-e1f350d644d94d3e9d70d6bed5e267bf
+      api-key:
       chat:
         options:
           model: qwen-max-latest
@@ -42,7 +42,7 @@ spring:
 langsmith:
   enabled: true
   tracing: true
-  api-key: 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
+  api-key:
   project: lx-ai
   endpoint: http://127.0.0.1:1984
   timeout: 60000
