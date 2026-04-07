@@ -84,12 +84,6 @@
             <version>2.9.2</version>
             <scope>compile</scope>
         </dependency>
-
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-chroma</artifactId>
-            <version>0.32.0</version>
-        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
