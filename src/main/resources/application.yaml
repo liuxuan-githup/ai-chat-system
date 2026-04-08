@@ -1,53 +1,5 @@
-server:
-  port: 1111
-
 spring:
   application:
     name: lx-ai
-  servlet:
-    multipart:
-      max-file-size: 100MB        # 单个文件最大大小（按需调整，如50MB/200MB）
-      max-request-size: 100MB     # 单次请求总文件大小（和上面保持一致即可）
-      enabled: true               # 开启文件上传（默认开启，可省略）
-  ai:
-    chroma:
-      base-url: http://localhost:8000  # Chroma 服务地址（Docker 启动默认端口）
-      collection-name: pdf-vector-db  # 自定义向量集合名（隔离不同数据）
-    ollama:
-      base-url: http://localhost:11434
-      chat:
-        model: deepseek-r1:7b
-    openai:
-      base-url: https://dashscope.aliyuncs.com/compatible-mode
-      api-key:
-      chat:
-        options:
-          model: qwen-max-latest
-      embedding:
-        options:
-          model: text-embedding-v3
-          dimensions: 1024
-    mcp:
-      client:
-        stdio:
-          servers-configuration: classpath:/mcp-servers-config.json
-        timeout: 120000
-  mandatory-file-encoding: UTF-8
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/lx?serverTimezone=Asia/Shanghai&useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&tinyInt1isBit=false&allowPublicKeyRetrieval=true&allowMultiQueries=true&useServerPrepStmts=false
-    username: root
-    password: root
-# LangSmith 配置
-langsmith:
-  enabled: true
-  tracing: true
-  api-key:
-  project: lx-ai
-  endpoint: http://127.0.0.1:1984
-  timeout: 60000
-
-logging:
-  level:
-    org.springframework.ai: debug
-    com.itheima.ai: debug
+  profiles:
+    active: local
