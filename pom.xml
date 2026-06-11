@@ -71,6 +71,12 @@
             <artifactId>spring-ai-mcp-client-spring-boot-starter</artifactId>
             <version>1.0.0-M6</version>
         </dependency>
+        <!-- Hutool工具包，提供敏感词引擎、文件读取 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.22</version>
+        </dependency>
         <!-- 缓存核心 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

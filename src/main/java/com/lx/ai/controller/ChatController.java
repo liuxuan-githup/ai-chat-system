@@ -1,6 +1,7 @@
 package com.lx.ai.controller;
 
 import com.lx.ai.repository.ChatHistoryRepository;
+import com.lx.ai.utils.PromptGuardUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.model.Media;
@@ -49,6 +50,20 @@ public class ChatController {
     ) {
         // 创建 SSE 连接（0 = 永不超时，生产环境稳定）
         SseEmitter emitter = new SseEmitter(0L);
+
+
+        // 新增前置违规拦截
+        if (PromptGuardUtil.isIllegal(prompt)) {
+            try {
+                // 直接推送拦截提示，不调用AI
+                emitter.send(PromptGuardUtil.getIllegalMsg());
+            } catch (IOException e) {
+                // 发送异常忽略
+            }
+            emitter.complete();
+            // 直接返回终止后续所有AI逻辑
+            return emitter;
+        }
 
         // 异步执行
         CompletableFuture.runAsync(() -> {
