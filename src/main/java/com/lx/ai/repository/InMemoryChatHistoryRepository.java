@@ -1,3 +1,4 @@
+/*
 package com.lx.ai.repository;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,10 +35,12 @@ public class InMemoryChatHistoryRepository implements ChatHistoryRepository {
 
     @Override
     public void save(String type, String chatId) {
-        /*if (!chatHistory.containsKey(type)) {
+        */
+/*if (!chatHistory.containsKey(type)) {
             chatHistory.put(type, new ArrayList<>());
         }
-        List<String> chatIds = chatHistory.get(type);*/
+        List<String> chatIds = chatHistory.get(type);*//*
+
         List<String> chatIds = chatHistory.computeIfAbsent(type, k -> new ArrayList<>());
         if (chatIds.contains(chatId)) {
             return;
@@ -47,15 +50,19 @@ public class InMemoryChatHistoryRepository implements ChatHistoryRepository {
 
     @Override
     public List<String> getChatIds(String type) {
-        /*List<String> chatIds = chatHistory.get(type);
-        return chatIds == null ? List.of() : chatIds;*/
+        */
+/*List<String> chatIds = chatHistory.get(type);
+        return chatIds == null ? List.of() : chatIds;*//*
+
         return chatHistory.getOrDefault(type, List.of());
     }
 
 
-    /**
+    */
+/**
      * 项目启动读取本地json文件
-     */
+     *//*
+
     @PostConstruct
     private void init() {
         // 1.初始化会话历史记录
@@ -88,9 +95,11 @@ public class InMemoryChatHistoryRepository implements ChatHistoryRepository {
         this.chatMemory.add(chatId, messages.stream().map(Msg::toMessage).toList());
     }
 
-    /**
+    */
+/**
      * 项目关闭/重启 保存内存中的聊天记录为json文件到本地
-     */
+     *//*
+
     @PreDestroy
     private void persistent() {
         String history = toJsonString(this.chatHistory);
@@ -138,3 +147,4 @@ public class InMemoryChatHistoryRepository implements ChatHistoryRepository {
         }
     }
 }
+*/

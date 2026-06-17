@@ -1,6 +1,8 @@
 package com.lx.ai.config;
 
 import com.lx.ai.constants.SystemConstants;
+import com.lx.ai.entity.po.Msg;
+import com.lx.ai.memory.RedisChatMemory;
 import com.lx.ai.model.AlibabaOpenAiChatModel;
 import com.lx.ai.tools.FeedbackTools;
 import com.lx.ai.tools.RuleTools;
@@ -31,6 +33,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -43,10 +46,15 @@ import java.util.*;
 @Configuration
 public class CommonConfiguration {
 
-    // 内存记忆将会话消息保存到jvm堆里面
+   /* // 内存记忆将会话消息保存到jvm堆里面
     @Bean
     public ChatMemory chatMemory() {
         return new InMemoryChatMemory();
+    }*/
+
+    @Bean
+    public ChatMemory chatMemory(RedisTemplate<String, Msg> redisTemplate) {
+        return new RedisChatMemory(redisTemplate);
     }
 
     // OpenAi的模型过期了
