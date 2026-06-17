@@ -19,7 +19,6 @@ public class RuleTools {
     // 输出审查
     private final OutputReviewer outputReviewer;
 
-    @Cacheable(value = "railwayKnowledge", key = "#question")
     @Tool(description = "根据条件查询计算方式")
     public String  getCalculationRule(@ToolParam(description = "查询的条件") String name) {
         if (name == null || name.isBlank()) {

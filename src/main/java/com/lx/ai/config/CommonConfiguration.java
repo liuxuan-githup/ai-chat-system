@@ -15,9 +15,12 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.observation.ChatModelObservationConvention;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.model.SimpleApiKey;
 import org.springframework.ai.model.tool.ToolCallingManager;
+import org.springframework.ai.ollama.OllamaEmbeddingModel;
 import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.tool.ToolCallbackProvider;
@@ -25,6 +28,7 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.support.RetryTemplate;
@@ -39,22 +43,37 @@ import java.util.*;
 @Configuration
 public class CommonConfiguration {
 
+    // 内存记忆将会话消息保存到jvm堆里面
     @Bean
     public ChatMemory chatMemory() {
         return new InMemoryChatMemory();
     }
 
-    @Bean
+    // OpenAi的模型过期了
+    /*@Bean
     public VectorStore vectorStore(OpenAiEmbeddingModel embeddingModel) {
+        return SimpleVectorStore.builder(embeddingModel).build();
+    }*/
+
+    // 改成调用本地模型
+    @Bean
+    public VectorStore vectorStore(OllamaEmbeddingModel embeddingModel) {
         return SimpleVectorStore.builder(embeddingModel).build();
     }
 
     // 使用spring ai 的ChatMemory+Advisors实现多轮对话记忆
     @Bean
     public ChatClient chatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory,ToolCallbackProvider mcpTools) {
+       /* OpenAiChatOptions options = OpenAiChatOptions
+                .builder()
+                .model("qwen3.5-ocr")
+                .streamUsage(true)
+                .temperature(0.7)
+                .topP(0.95)
+                .build();*/
         return ChatClient
                 .builder(model)
-                .defaultOptions(ChatOptions.builder().model("qwen-omni-turbo").build())
+                .defaultOptions(ChatOptions.builder().model("qwen3.7-max").build())
                 .defaultSystem("你是一家名为“liuxuan有限公司”的科技企业的智能助手，你的名字叫“小刘”。你要用专业、亲切且充满耐心的语气与用户交流。")
                 .defaultTools(mcpTools)
                 .defaultAdvisors(
