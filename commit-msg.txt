@@ -1,0 +1,11 @@
+【调优】问答系统稳定性与运维性优化
+
+- 修复：SSE 线程池 newCachedThreadPool 改为有界线程池（核心4/最大8/队列200 + CallerRunsPolicy），消除高并发 OOM 风险
+- 修复：LocalPdfFileRepository 保存改为 UTF-8 编码，解决中文文件名/路径乱码
+- 修复：RAG 向量检索降级，Ollama/Milvus 不可用时返回空上下文而非 500
+- 优化：MCP 服务器配置从 JSON 迁移至 yaml connections，路径支持 ${MCP_MIANSHIYA_JAR} 环境变量，换环境只改一处；请求超时 120s 降至 30s
+- 优化：Rerank 增加 Caffeine 缓存，相同问题+候选文档集命中缓存，减少百炼 API 调用
+- 新增：全局异常处理 GlobalExceptionHandler，统一返回 {ok,msg}，堆栈不泄露给前端
+- 新增：PDF 上传魔数校验（%PDF- 文件头）防伪装文件；会话文件不存在由 500 改为 404
+- 新增：敏感词拦截覆盖 游戏/客服/PDF 三个问答接口，与 ChatController 行为一致
+- 优化：Spring AI 框架日志 debug 降至 warn，收敛刷屏日志

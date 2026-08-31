@@ -22,9 +22,11 @@ import reactor.core.publisher.Flux;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
 
@@ -40,8 +42,13 @@ public class ChatController {
 
     private final ChatMemory chatMemory;
 
-    // 固定线程池，防止OOM，高并发场景专用
-    private static final ExecutorService SSE_EXECUTOR = Executors.newCachedThreadPool();
+    // 有界线程池：核心4、最大8、队列200。队列满时由调用线程执行（CallerRunsPolicy），
+    // 避免高并发下无限创建线程导致 OOM（原 newCachedThreadPool 与"固定线程池"注释自相矛盾）
+    private static final ExecutorService SSE_EXECUTOR = new ThreadPoolExecutor(
+            4, 8, 60L, TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(200),
+            new ThreadPoolExecutor.CallerRunsPolicy()
+    );
 
     /**
      * 使用SseEmitter + CompletableFuture实现 SSE流式 Al接口，

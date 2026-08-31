@@ -9,6 +9,7 @@ import org.springframework.ai.autoconfigure.openai.OpenAiChatProperties;
 import org.springframework.ai.autoconfigure.openai.OpenAiConnectionProperties;
 import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -54,6 +55,9 @@ public class DashScopeRerankServiceImpl implements RerankService {
     }
 
     @Override
+    @Cacheable(value = "rerank",
+            key = "#query + ':' + #documents.![text].hashCode()",
+            condition = "#documents != null && #documents.size() > #topN")
     public List<Document> rerank(String query, List<Document> documents, int topN) {
         if (documents == null || documents.isEmpty()) {
             return Collections.emptyList();

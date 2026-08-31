@@ -4,6 +4,7 @@ import com.lx.ai.entity.vo.Result;
 import com.lx.ai.repository.ChatHistoryRepository;
 import com.lx.ai.repository.FileRepository;
 import com.lx.ai.service.PdfRagService;
+import com.lx.ai.utils.PromptGuardUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -19,6 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -52,10 +55,15 @@ public class PdfController {
             log.warn("PDF问答请求缺少 chatId，前端需以 query 参数传递，prompt={}", prompt);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 chatId 参数");
         }
-        // 1.找到会话文件
+        // 0.5 敏感词/无效提问拦截
+        if (PromptGuardUtil.isIllegal(prompt)) {
+            log.warn("PDF问答拦截违规提问：prompt={}", prompt);
+            return Flux.just(PromptGuardUtil.getIllegalMsg());
+        }
+        // 1.找到会话文件（不存在返回 404，由前端提示）
         Resource file = fileRepository.getFile(chatId);
         if (!file.exists()) {
-            throw new RuntimeException("会话文件不存在！");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "会话文件不存在！");
         }
         // 2.保存会话id
         chatHistoryRepository.save("pdf", chatId);
@@ -99,9 +107,18 @@ public class PdfController {
     @RequestMapping("/upload/{chatId}")
     public Result uploadPdf(@PathVariable String chatId, @RequestParam("file") MultipartFile file) {
         try {
-            // 1. 校验文件是否为PDF格式
+            // 1. 校验文件是否为PDF格式（content-type + 文件头魔数双重校验，防伪装文件）
             if (!Objects.equals(file.getContentType(), "application/pdf")) {
                 return Result.fail("只能上传PDF文件！");
+            }
+            try (InputStream in = file.getInputStream()) {
+                byte[] magic = in.readNBytes(5);
+                if (!"%PDF-".equals(new String(magic, StandardCharsets.US_ASCII))) {
+                    return Result.fail("文件不是有效的PDF格式！");
+                }
+            } catch (IOException e) {
+                log.error("读取PDF文件头失败", e);
+                return Result.fail("读取文件失败！");
             }
             // 2.保存文件
             boolean success = fileRepository.save(chatId, file.getResource());
@@ -113,7 +130,8 @@ public class PdfController {
             return Result.ok();
         } catch (Exception e) {
             log.error("Failed to upload PDF.", e);
-            return Result.fail("上传文件失败！");
+            // 常见原因：Ollama/Milvus 未启动导致 Embedding/入库失败，给出可操作提示
+            return Result.fail("上传失败：" + e.getMessage());
         }
     }
 

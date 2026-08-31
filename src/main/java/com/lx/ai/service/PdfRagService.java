@@ -16,6 +16,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,14 +120,21 @@ public class PdfRagService {
 
         // 2. 向量粗召回（多召回，交给 Rerank 精排）
         int recallCount = topK * recallMultiplier;
-        List<Document> recallDocuments = vectorStore.similaritySearch(
-                SearchRequest.builder()
-                        .query(query)
-                        .topK(recallCount)
-                        .similarityThreshold(similarityThreshold)
-                        .filterExpression(filter)
-                        .build()
-        );
+        List<Document> recallDocuments;
+        try {
+            recallDocuments = vectorStore.similaritySearch(
+                    SearchRequest.builder()
+                            .query(query)
+                            .topK(recallCount)
+                            .similarityThreshold(similarityThreshold)
+                            .filterExpression(filter)
+                            .build()
+            );
+        } catch (Exception e) {
+            // 降级：Ollama/Milvus 不可用时不让整个接口 500，返回空由上层提示"未找到参考资料"
+            log.warn("向量检索失败（请检查 Ollama/Milvus 是否可用），本次问答返回空上下文：{}", e.getMessage());
+            return Collections.emptyList();
+        }
         log.info("向量粗召回 {} 条，query={}", recallDocuments.size(), query);
 
         // 3. Rerank 精排

@@ -2,6 +2,7 @@ package com.lx.ai.controller;
 
 import com.lx.ai.entity.vo.Result;
 import com.lx.ai.repository.ChatHistoryRepository;
+import com.lx.ai.utils.PromptGuardUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -38,6 +39,11 @@ public class GameController {
         if (!StringUtils.hasText(chatId)) {
             log.warn("游戏请求缺少 chatId，前端需以 query 参数传递，prompt={}", prompt);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 chatId 参数");
+        }
+        // 0.5 敏感词/无效提问拦截
+        if (PromptGuardUtil.isIllegal(prompt)) {
+            log.warn("游戏问答拦截违规提问：prompt={}", prompt);
+            return Flux.just(PromptGuardUtil.getIllegalMsg());
         }
         // 1.保存会话id
         chatHistoryRepository.save("game", chatId);

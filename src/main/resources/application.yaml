@@ -72,8 +72,19 @@ spring:
     mcp:
       client:
         stdio:
-          servers-configuration: classpath:/mcp-servers-config.json
-        timeout: 120000
+          # MCP 服务器改为 yaml connections 配置：支持 ${...} 占位符，换环境只需改一处
+          # （旧 servers-configuration JSON 方式不支持占位符，已废弃删除）
+          connections:
+            mianshiyaServer:
+              command: java
+              args:
+                - -Dspring.ai.mcp.server.stdio=true
+                - -Dspring.main.web-application-type=none
+                - -Dlogging.pattern.console=
+                - -jar
+                # jar 路径支持环境变量覆盖：set MCP_MIANSHIYA_JAR=xxx 或直接改下面默认值
+                - ${MCP_MIANSHIYA_JAR:D:/Desktop/mcp/mcp-mianshiya-server/target/mcp-server-0.0.1-SNAPSHOT.jar}
+        request-timeout: 30000   # MCP 请求超时 30s（原 120s 过长，服务器卡死会拖住请求）
   mandatory-file-encoding: UTF-8
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -91,5 +102,6 @@ spring:
 
 logging:
   level:
-    org.springframework.ai: debug
-    com.itheima.ai: debug
+    root: info
+    org.springframework.ai: warn   # 避免 Spring AI 框架 debug 日志刷屏，出错时 warn 即可定位
+    com.lx.ai: info

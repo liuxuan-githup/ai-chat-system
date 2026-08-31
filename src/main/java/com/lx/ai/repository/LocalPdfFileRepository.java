@@ -65,7 +65,7 @@ public class LocalPdfFileRepository implements FileRepository {
         // 2.删除会话映射并立即持久化（防止重启后映射恢复）
         chatFiles.remove(chatId);
         try {
-            chatFiles.store(new FileWriter("chat-pdf.properties"), LocalDateTime.now().toString());
+            chatFiles.store(new OutputStreamWriter(new FileOutputStream("chat-pdf.properties"), StandardCharsets.UTF_8), LocalDateTime.now().toString());
         } catch (IOException e) {
             log.error("持久化会话映射失败", e);
         }
@@ -90,7 +90,7 @@ public class LocalPdfFileRepository implements FileRepository {
     @PreDestroy
     private void persistent() {
         try {
-            chatFiles.store(new FileWriter("chat-pdf.properties"), LocalDateTime.now().toString());
+            chatFiles.store(new OutputStreamWriter(new FileOutputStream("chat-pdf.properties"), StandardCharsets.UTF_8), LocalDateTime.now().toString());
             // Milvus向量库自动持久化，无需手动保存
             log.info("会话映射已保存，Milvus向量数据自动持久化");
         } catch (IOException e) {
