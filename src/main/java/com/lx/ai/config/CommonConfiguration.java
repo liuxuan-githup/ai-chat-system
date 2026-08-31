@@ -22,6 +22,7 @@ import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -45,8 +46,9 @@ public class CommonConfiguration {
     }*/
 
     @Bean
-    public ChatMemory chatMemory(RedisTemplate<String, Msg> redisTemplate) {
-        return new RedisChatMemory(redisTemplate);
+    public ChatMemory chatMemory(RedisTemplate<String, Msg> redisTemplate,
+                                 @Value("${app.chat-memory.ttl-days:-1}") long ttlDays) {
+        return new RedisChatMemory(redisTemplate, ttlDays);
     }
 
     // OpenAi的模型过期了
@@ -77,7 +79,8 @@ public class CommonConfiguration {
 
     // 使用spring ai 的ChatMemory+Advisors实现多轮对话记忆
     @Bean
-    public ChatClient chatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory, ToolCallbackProvider mcpTools, FeedbackTools feedbackTool) {
+    public ChatClient chatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory, ToolCallbackProvider mcpTools, FeedbackTools feedbackTool,
+                                 @Value("${app.chat-memory.last-n:20}") int lastN) {
        /* OpenAiChatOptions options = OpenAiChatOptions
                 .builder()
                 .model("qwen3.5-ocr")
@@ -94,13 +97,14 @@ public class CommonConfiguration {
                 .defaultTools(mcpTools, feedbackTool)
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
-                        new MessageChatMemoryAdvisor(chatMemory)
+                        new MessageChatMemoryAdvisor(chatMemory, "", lastN)
                 )
                 .build();
     }
 
     @Bean
-    public ChatClient gameChatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory,ToolCallbackProvider mcpTools) {
+    public ChatClient gameChatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory,ToolCallbackProvider mcpTools,
+                                     @Value("${app.chat-memory.last-n:20}") int lastN) {
         return ChatClient
                 .builder(model)
                 .defaultSystem(SystemConstants.GAME_SYSTEM_PROMPT)
@@ -108,7 +112,7 @@ public class CommonConfiguration {
                         // 日志
                         new SimpleLoggerAdvisor(),
                         // 会话记忆
-                        new MessageChatMemoryAdvisor(chatMemory)
+                        new MessageChatMemoryAdvisor(chatMemory, "", lastN)
                 )
                 .defaultTools(mcpTools)
                 .build();
@@ -118,25 +122,27 @@ public class CommonConfiguration {
     public ChatClient serviceChatClient(AlibabaOpenAiChatModel model
             , ChatMemory chatMemory
             , FeedbackTools feedbackTool
-            , RuleTools ruleTools) {
+            , RuleTools ruleTools
+            , @Value("${app.chat-memory.last-n:20}") int lastN) {
         return ChatClient
                 .builder(model)
                 .defaultSystem(SystemConstants.SERVICE_SYSTEM_PROMPT)
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
-                        new MessageChatMemoryAdvisor(chatMemory)
+                        new MessageChatMemoryAdvisor(chatMemory, "", lastN)
                 )
                 .defaultTools(feedbackTool,ruleTools)
                 .build();
     }
 
     @Bean
-    public ChatClient pdfChatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory) {
+    public ChatClient pdfChatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory,
+                                    @Value("${app.chat-memory.last-n:20}") int lastN) {
         return ChatClient
                 .builder(model)
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
-                        new MessageChatMemoryAdvisor(chatMemory)
+                        new MessageChatMemoryAdvisor(chatMemory, "", lastN)
                 )
                 .build();
     }

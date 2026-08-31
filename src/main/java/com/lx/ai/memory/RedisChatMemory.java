@@ -14,8 +14,12 @@ public class RedisChatMemory implements ChatMemory {
 
     private final RedisTemplate<String, Msg> redisTemplate;
 
-    public RedisChatMemory(RedisTemplate<String, Msg> redisTemplate) {
+    /** 记忆过期天数：>0 表示 N 天后过期，<=0 表示永久保存 */
+    private final long ttlDays;
+
+    public RedisChatMemory(RedisTemplate<String, Msg> redisTemplate, long ttlDays) {
         this.redisTemplate = redisTemplate;
+        this.ttlDays = ttlDays;
     }
 
     @Override
@@ -23,8 +27,10 @@ public class RedisChatMemory implements ChatMemory {
         String key = KEY_PREFIX + conversationId;
         List<Msg> msgList = messages.stream().map(Msg::new).collect(Collectors.toList());
         redisTemplate.opsForList().rightPushAll(key, msgList);
-        // 正常保存永久
-        redisTemplate.expire(key, Duration.ofDays(7));
+        // TTL 配置化：ttlDays > 0 时 N 天过期；<=0 永久保存
+        if (ttlDays > 0) {
+            redisTemplate.expire(key, Duration.ofDays(ttlDays));
+        }
     }
 
     @Override

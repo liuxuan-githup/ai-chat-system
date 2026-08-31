@@ -1,6 +1,12 @@
 server:
   port: 1111
 
+# 多轮对话记忆调优
+app:
+  chat-memory:
+    ttl-days: -1      # 记忆过期天数：-1 永久保存；>0 表示 N 天后自动过期
+    last-n: 20        # 每轮带入模型的上下文消息条数（越大越"记得久"，但 token 消耗越大）
+
 spring:
   data:
     redis:
