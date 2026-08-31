@@ -11,28 +11,20 @@ import org.springframework.ai.autoconfigure.openai.OpenAiChatProperties;
 import org.springframework.ai.autoconfigure.openai.OpenAiConnectionProperties;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.observation.ChatModelObservationConvention;
-import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.model.SimpleApiKey;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.ollama.OllamaEmbeddingModel;
-import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.tool.ToolCallbackProvider;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
-import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.CollectionUtils;
@@ -63,15 +55,29 @@ public class CommonConfiguration {
         return SimpleVectorStore.builder(embeddingModel).build();
     }*/
 
-    // 改成调用本地模型
+    // Milvus 自动配置按 EmbeddingModel 类型注入会有歧义，这里指定 Ollama(bge-m3) 为主，
+    // 与 Milvus 配置的 embedding-dimension: 1024 保持一致。
     @Bean
-    public VectorStore vectorStore(OllamaEmbeddingModel embeddingModel) {
-        return SimpleVectorStore.builder(embeddingModel).build();
+    @Primary
+    public EmbeddingModel primaryEmbeddingModel(OllamaEmbeddingModel ollamaEmbeddingModel) {
+        return ollamaEmbeddingModel;
+    }
+
+    // 智能文本切分器（Chunk + Overlap）
+    @Bean
+    public TokenTextSplitter tokenTextSplitter() {
+        return new TokenTextSplitter(
+                800,    // chunkSize：每个Chunk约800个token
+                100,    // chunkOverlap：相邻Chunk重叠100个token，防止上下文断裂
+                5,      // minChunkSizeChars：最小Chunk字符数
+                10000,  // maxNumChunks：最大Chunk数量
+                true    // keepSeparator：保留分隔符
+        );
     }
 
     // 使用spring ai 的ChatMemory+Advisors实现多轮对话记忆
     @Bean
-    public ChatClient chatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory,ToolCallbackProvider mcpTools) {
+    public ChatClient chatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory, ToolCallbackProvider mcpTools, FeedbackTools feedbackTool) {
        /* OpenAiChatOptions options = OpenAiChatOptions
                 .builder()
                 .model("qwen3.5-ocr")
@@ -81,9 +87,11 @@ public class CommonConfiguration {
                 .build();*/
         return ChatClient
                 .builder(model)
-                .defaultOptions(ChatOptions.builder().model("qwen3.7-max").build())
-                .defaultSystem("你是一家名为“liuxuan有限公司”的科技企业的智能助手，你的名字叫“小刘”。你要用专业、亲切且充满耐心的语气与用户交流。")
-                .defaultTools(mcpTools)
+                .defaultSystem("你是一家名为“liuxuan有限公司”的科技企业的智能助手，你的名字叫“小刘”。你要用专业、亲切且充满耐心的语气与用户交流。"
+                        + "当用户表达对系统的反馈、不满、投诉或改进建议时（例如“回复慢”“报错”“不好用”“提个建议”等），"
+                        + "请主动调用 addFeedback 工具新建反馈：尽量从对话中提取反馈人、联系方式、核心问题和场景描述，"
+                        + "用户没有提供的信息留空即可，不要编造。")
+                .defaultTools(mcpTools, feedbackTool)
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
                         new MessageChatMemoryAdvisor(chatMemory)
@@ -92,7 +100,7 @@ public class CommonConfiguration {
     }
 
     @Bean
-    public ChatClient gameChatClient(OpenAiChatModel model, ChatMemory chatMemory) {
+    public ChatClient gameChatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory,ToolCallbackProvider mcpTools) {
         return ChatClient
                 .builder(model)
                 .defaultSystem(SystemConstants.GAME_SYSTEM_PROMPT)
@@ -102,6 +110,7 @@ public class CommonConfiguration {
                         // 会话记忆
                         new MessageChatMemoryAdvisor(chatMemory)
                 )
+                .defaultTools(mcpTools)
                 .build();
     }
 
@@ -122,20 +131,12 @@ public class CommonConfiguration {
     }
 
     @Bean
-    public ChatClient pdfChatClient(OpenAiChatModel model, ChatMemory chatMemory, VectorStore vectorStore) {
+    public ChatClient pdfChatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory) {
         return ChatClient
                 .builder(model)
-                .defaultSystem("请根据上下文回答问题，遇到上下文没有的问题，不要随意编造。")
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
-                        new MessageChatMemoryAdvisor(chatMemory),
-                        new QuestionAnswerAdvisor(
-                                vectorStore,
-                                SearchRequest.builder()
-                                        .similarityThreshold(0.6)
-                                        .topK(2)
-                                        .build()
-                        )
+                        new MessageChatMemoryAdvisor(chatMemory)
                 )
                 .build();
     }

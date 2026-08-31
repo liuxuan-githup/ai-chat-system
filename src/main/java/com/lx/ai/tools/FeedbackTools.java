@@ -16,13 +16,13 @@ public class FeedbackTools {
     // 使用@tool注解实现查询数据
     private final IcustomerServiceFeedbackService service;
 
-    @Tool(description = "新增反馈，返回反馈单号")
+    @Tool(description = "新增反馈，返回反馈单号。当用户表达对系统的投诉、不满、建议或使用问题时调用（如“回复慢”“报错”“不好用”等），用户未提供的信息可以不填，不要编造")
     public Integer addFeedback(
-            @ToolParam(description = "反馈人姓名/账号") String feedbackUser,
-            @ToolParam(description = "反馈人联系方式") String contactInfo,
-            @ToolParam(description = "核心问题") String coreProblem,
-            @ToolParam(description = "具体问题场景描述") String problemScenario,
-            @ToolParam(description = "补充说明",required = false) String otherSuggestion
+            @ToolParam(description = "反馈人姓名/账号（用户未提供可留空）", required = false) String feedbackUser,
+            @ToolParam(description = "反馈人联系方式（用户未提供可留空）", required = false) String contactInfo,
+            @ToolParam(description = "核心问题（从用户描述中提取）", required = false) String coreProblem,
+            @ToolParam(description = "具体问题场景描述（用户未提供可留空）", required = false) String problemScenario,
+            @ToolParam(description = "补充说明", required = false) String otherSuggestion
     ){
         CustomerServiceFeedback customerServiceFeedback = new CustomerServiceFeedback();
         customerServiceFeedback.setFeedbackUser(feedbackUser);

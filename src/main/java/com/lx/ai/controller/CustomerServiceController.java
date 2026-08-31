@@ -1,14 +1,24 @@
 package com.lx.ai.controller;
 
+import com.lx.ai.entity.vo.Result;
 import com.lx.ai.repository.ChatHistoryRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/ai")
@@ -18,8 +28,17 @@ public class CustomerServiceController {
 
     private final ChatHistoryRepository chatHistoryRepository;
 
+    private final ChatMemory chatMemory;
+
     @RequestMapping(value = "/service", produces = "text/html;charset=utf-8")
-    public Flux<String> service(String prompt, String chatId) {
+    public Flux<String> service(
+            @RequestParam("prompt") String prompt,
+            @RequestParam(value = "chatId", required = false) String chatId) {
+        // 0.参数校验：chatId 缺失返回 400，由前端自行提示，错误不推给终端用户
+        if (!StringUtils.hasText(chatId)) {
+            log.warn("客服请求缺少 chatId，前端需以 query 参数传递，prompt={}", prompt);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 chatId 参数");
+        }
         // 1.保存会话id
         chatHistoryRepository.save("service", chatId);
         // 2.请求模型
@@ -28,5 +47,21 @@ public class CustomerServiceController {
                 .advisors(a -> a.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId))
                 .stream()
                 .content();
+    }
+
+    /**
+     * 删除会话：清除聊天记录 + 从会话列表移除
+     */
+    @DeleteMapping("/service/{chatId}")
+    public Result deleteService(@PathVariable("chatId") String chatId) {
+        try {
+            chatMemory.clear(chatId);
+            chatHistoryRepository.delete("service", chatId);
+            log.info("删除会话完成：chatId={}", chatId);
+            return Result.ok();
+        } catch (Exception e) {
+            log.error("Failed to delete service chat.", e);
+            return Result.fail("删除会话失败！");
+        }
     }
 }

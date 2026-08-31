@@ -1,7 +1,9 @@
 package com.lx.ai.utils;
 
-import cn.hutool.core.io.FileUtil;
-import java.nio.charset.StandardCharsets;
+import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.io.resource.ClassPathResource;
+
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,7 +17,7 @@ public class PromptGuardUtil {
     private static final Set<String> SENSITIVE_WORDS = new HashSet<>();
 
     static {
-        // 加载四份词库文件
+        // 加载四份词库文件（classpath 资源，IDE运行与jar打包均可读取）
         loadWords("sensitive/abusive_words.txt");
         loadWords("sensitive/pornography.txt");
         loadWords("sensitive/gamble.txt");
@@ -23,10 +25,12 @@ public class PromptGuardUtil {
     }
 
     /**
-     * 读取txt里每行一个敏感词，放入集合
+     * 从classpath读取txt里每行一个敏感词，放入集合
      */
-    private static void loadWords(String filePath) {
-        List<String> lines = FileUtil.readLines(filePath, StandardCharsets.UTF_8);
+    private static void loadWords(String classPath) {
+        // 用 InputStream 从 classpath 读取，避免 FileUtil 读文件系统路径在 jar 打包后失效
+        List<String> lines = IoUtil.readUtf8Lines(
+                new ClassPathResource(classPath).getStream(), new ArrayList<>());
         for (String line : lines) {
             String word = line.trim();
             if (!word.isEmpty()) {

@@ -1,12 +1,16 @@
 package com.lx.ai.controller;
 
+import com.lx.ai.entity.vo.Result;
 import com.lx.ai.repository.ChatHistoryRepository;
 import com.lx.ai.utils.PromptGuardUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.model.Media;
 import org.springframework.http.MediaType;
-import org.springframework.util.MimeType;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +28,7 @@ import java.util.concurrent.Executors;
 
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/ai")
@@ -32,6 +37,8 @@ public class ChatController {
     private final ChatClient chatClient;
 
     private final ChatHistoryRepository chatHistoryRepository;
+
+    private final ChatMemory chatMemory;
 
     // 固定线程池，防止OOM，高并发场景专用
     private static final ExecutorService SSE_EXECUTOR = Executors.newCachedThreadPool();
@@ -146,6 +153,22 @@ public class ChatController {
             emitter.send(content);
         } catch (IOException e) {
             emitter.completeWithError(e);
+        }
+    }
+
+    /**
+     * 删除会话：清除聊天记录 + 从会话列表移除
+     */
+    @DeleteMapping("/chat/{chatId}")
+    public Result deleteChat(@PathVariable("chatId") String chatId) {
+        try {
+            chatMemory.clear(chatId);
+            chatHistoryRepository.delete("chat", chatId);
+            log.info("删除会话完成：chatId={}", chatId);
+            return Result.ok();
+        } catch (Exception e) {
+            log.error("Failed to delete chat.", e);
+            return Result.fail("删除会话失败！");
         }
     }
 }

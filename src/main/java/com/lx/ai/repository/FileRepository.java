@@ -17,4 +17,11 @@ public interface FileRepository {
      * @return 找到的文件
      */
     Resource getFile(String chatId);
+
+    /**
+     * 根据chatId删除文件及会话映射
+     * @param chatId 会话id
+     * @return 删除成功，返回true；否则返回false
+     */
+    boolean delete(String chatId);
 }

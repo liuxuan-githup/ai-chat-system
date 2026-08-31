@@ -7,7 +7,7 @@
         "-Dspring.main.web-application-type=none",
         "-Dlogging.pattern.console=",
         "-jar",
-        "C:/Users/26553/Desktop/mcp/mcp-mianshiya-server/target/mcp-server-0.0.1-SNAPSHOT.jar"
+        "D:/Desktop/mcp/mcp-mianshiya-server/target/mcp-server-0.0.1-SNAPSHOT.jar"
       ],
       "env": {}
     }

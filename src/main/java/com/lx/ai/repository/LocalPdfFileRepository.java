@@ -4,12 +4,10 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -51,6 +49,30 @@ public class LocalPdfFileRepository implements FileRepository {
         return new FileSystemResource(chatFiles.getProperty(chatId));
     }
 
+    @Override
+    public boolean delete(String chatId) {
+        String filename = chatFiles.getProperty(chatId);
+        if (filename == null) {
+            log.warn("会话映射不存在，无需删除：chatId={}", chatId);
+            return false;
+        }
+        // 1.删除物理文件
+        File file = new File(filename);
+        if (file.exists() && !file.delete()) {
+            log.error("删除物理文件失败：{}", filename);
+            return false;
+        }
+        // 2.删除会话映射并立即持久化（防止重启后映射恢复）
+        chatFiles.remove(chatId);
+        try {
+            chatFiles.store(new FileWriter("chat-pdf.properties"), LocalDateTime.now().toString());
+        } catch (IOException e) {
+            log.error("持久化会话映射失败", e);
+        }
+        log.info("已删除PDF：chatId={}, file={}", chatId, filename);
+        return true;
+    }
+
     @PostConstruct
     private void init() {
         FileSystemResource pdfResource = new FileSystemResource("chat-pdf.properties");
@@ -61,19 +83,16 @@ public class LocalPdfFileRepository implements FileRepository {
                 throw new RuntimeException(e);
             }
         }
-        FileSystemResource vectorResource = new FileSystemResource("chat-pdf.json");
-        if (vectorResource.exists()) {
-            SimpleVectorStore simpleVectorStore = (SimpleVectorStore) vectorStore;
-            simpleVectorStore.load(vectorResource);
-        }
+        // Milvus向量库自动持久化，无需手动加载
+        log.info("Milvus VectorStore 初始化完成");
     }
 
     @PreDestroy
     private void persistent() {
         try {
             chatFiles.store(new FileWriter("chat-pdf.properties"), LocalDateTime.now().toString());
-            SimpleVectorStore simpleVectorStore = (SimpleVectorStore) vectorStore;
-            simpleVectorStore.save(new File("chat-pdf.json"));
+            // Milvus向量库自动持久化，无需手动保存
+            log.info("会话映射已保存，Milvus向量数据自动持久化");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

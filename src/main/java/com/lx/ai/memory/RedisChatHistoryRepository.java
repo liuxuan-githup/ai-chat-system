@@ -28,4 +28,9 @@ public class RedisChatHistoryRepository implements ChatHistoryRepository {
         Set<String> ids = stringRedisTemplate.opsForSet().members(KEY_PREFIX + type);
         return ids == null ? List.of() : List.copyOf(ids);
     }
+
+    @Override
+    public void delete(String type, String chatId) {
+        stringRedisTemplate.opsForSet().remove(KEY_PREFIX + type, chatId);
+    }
 }

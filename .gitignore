@@ -1,5 +1,13 @@
 ### CUSTOH ###
 application.local.yml
+application-local.yml
+# 运行时生成的会话-文件映射与本地环境配置
+chat-pdf.properties
+chat-pdf.json
+# 测试用 PDF
+测试.pdf
+测试_加水印.pdf
+test_small.pdf
 
 HELP.md
 target/

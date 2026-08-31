@@ -35,5 +35,6 @@ public class ChatHistoryController {
     @DeleteMapping("/{type}/{chatId}")
     public void deleteChatHistory(@PathVariable("type") String type, @PathVariable("chatId") String chatId) {
         chatMemory.clear(chatId);
+        chatHistoryRepository.delete(type, chatId);
     }
 }

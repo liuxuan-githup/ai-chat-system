@@ -1,5 +1,89 @@
+server:
+  port: 1111
+
 spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      # password: 123456
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
   application:
     name: lx-ai
-  profiles:
-    active: local
+  servlet:
+    multipart:
+      max-file-size: 100MB        # 单个文件最大大小（按需调整，如50MB/200MB）
+      max-request-size: 100MB     # 单次请求总文件大小（和上面保持一致即可）
+      enabled: true               # 开启文件上传（默认开启，可省略）
+  ai:
+    vectorstore:
+      milvus:
+        client:
+          host: 127.0.0.1
+          port: 19530
+          username:
+          password:
+        database-name: default
+        collection-name: pdf_vector_store
+        embedding-dimension: 1024
+        index-type: HNSW
+        metric-type: COSINE
+        initialize-schema: true   # 关键：启动时自动创建集合
+#    chroma:
+#      base-url: http://localhost:8000  # Chroma 服务地址（Docker 启动默认端口）
+#      collection-name: pdf-vector-db  # 自定义向量集合名（隔离不同数据）
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: deepseek-r1:7b
+      embedding:
+        options:
+          model: bge-m3
+    openai:
+      base-url: https://ws-c9xuhe72n1oof204.cn-beijing.maas.aliyuncs.com/compatible-mode
+      api-key: sk-fcab51d8619947359c9d5586cb18f1e1
+      chat:
+        options:
+          model: qwen3.7-plus
+    dashscope:
+      rerank:
+        # 百炼 MaaS 工作空间 rerank 端点（注意是 compatible-api，不是 compatible-mode）
+        url: https://ws-c9xuhe72n1oof204.cn-beijing.maas.aliyuncs.com/compatible-api/v1/reranks
+        model: qwen3-rerank
+        # RAG 检索参数
+        top-k: 3                     # 最终返回给 LLM 的文档数
+        recall-multiplier: 5         # 向量粗召回倍率（topK * multiplier）
+        similarity-threshold: 0.35   # 向量召回相似度阈值（COSINE，偏松由 Rerank 兜底）
+#      embedding:
+#        options:
+#          model: text-embedding-v4
+#          dimensions: 1024
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:/mcp-servers-config.json
+        timeout: 120000
+  mandatory-file-encoding: UTF-8
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/lx?serverTimezone=Asia/Shanghai&useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&tinyInt1isBit=false&allowPublicKeyRetrieval=true&allowMultiQueries=true&useServerPrepStmts=false
+    username: root
+    password: root
+# LangSmith 配置
+#langsmith:
+#  enabled: true
+#  tracing: true
+#  api-key: sk-fcab51d8619947359c9d5586cb18f1e1
+#  project: lx-ai
+#  endpoint: http://127.0.0.1:1984
+#  timeout: 60000
+
+logging:
+  level:
+    org.springframework.ai: debug
+    com.itheima.ai: debug
